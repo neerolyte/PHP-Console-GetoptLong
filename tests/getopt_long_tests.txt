@@ -3,6 +3,7 @@ Missing trailing synonym;setup;foo|;Do not recognise description 'foo|'
 Missing second trailing synonym;setup;foo|bar|;Do not recognise description 'foo|bar|'
 Missing starting synonym;setup;|foo;Do not recognise description '|foo'
 Missing second starting synonym;setup;|foo|bar;Do not recognise description '|foo|bar'
+Missing middle synonym;setup;foo||bar;Do not recognise description 'foo||bar'
 Missing mandatory type specifier;setup;foo=;Do not recognise description 'foo='
 Missing optional type specifier;setup;foo:;Do not recognise description 'foo:'
 Doubled mandatory type specifier;setup;foo==;Do not recognise description 'foo=='
@@ -252,4 +253,16 @@ Ignore unrecognised option, both types, short;unknown_option_handling;ignore -m 
 Ignore unrecognised option, both types, long;unknown_option_handling;ignore --mandatory foo --bar;foo,(ignore)
 Ignore unrecognised option, both types, mixed;unknown_option_handling;ignore --bar -m foo;foo,(ignore)
 
+# Ordered unflagged options - in other words, allowing the caller to pick
+# values up from the non-flagged options in the command line in order.
+
+Ordered unflagged options, no options;ordered_unflagged;;,,()
+Ordered unflagged options, one (short);ordered_unflagged;-f foo;foo,,()
+Ordered unflagged options, one (long);ordered_unflagged;-first foo;foo,,()
+Ordered unflagged options, one (short double-dash);ordered_unflagged;--f foo;foo,,()
+Ordered unflagged options, one (long double-dash);ordered_unflagged;--first foo;foo,,()
+Ordered unflagged options, one (unflagged);ordered_unflagged;foo;foo,,()
+Ordered unflagged options, two (unflagged);ordered_unflagged;foo bar;foo,bar,()
+Ordered unflagged options, three (unflagged);ordered_unflagged;foo bar baz;foo,bar,(baz)
+Ordered unflagged options, four (unflagged);ordered_unflagged;foo bar baz burfl;foo,bar,(baz,burfl)
 
