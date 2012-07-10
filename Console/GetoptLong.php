@@ -287,6 +287,13 @@ class Console_GetoptLong
      * the caller wants to process a list of arguments of their own, this list
      * can be passed as the second parameter to getOptions.
      *
+     * To pick up options from the processed argument list in order, use the
+     * description '_1' (or '_2', or in general '_(\d+)').  After all flagged
+     * options are processed, if any such synonyms are found, they will be
+     * taken from the related place in the array, numbered from 1.  Places
+     * not numbered are ignored - so if you have _1, _2 and _4, the third
+     * argument will be left in the argument list to be passed back.
+     *
      * TODO: handle -abcd (where a, b, c and d are single letter options).
      *
      * @return array the remaining list of command line parameters that
@@ -308,6 +315,11 @@ class Console_GetoptLong
 
         $help_supplied = false; // Are we to generate help options?
         $argHelp = array();
+        
+        // Ordered unflagged arguments.  They're put in by number, but we
+        // sort them before use because PHP arrays retain the order that
+        // elements are put in (like a Perl Tied Hash::Ordered).
+        $ordered_unflagged_args = array();
         
         // foreach key => val doesn't respect references - use keys only
         foreach (array_keys($argDescriptions) as $argdesc) {
