@@ -392,6 +392,32 @@ class Console_GetoptLong
 
             foreach (explode('|', $synonyms) as $synonym) {
 
+                // check for ordered unflagged synonym
+                if (strlen($synonym) == 2
+                    and substr($synonym, 0, 1) == '_'
+                    and substr($synonym, 1, 1) >= 1
+                    and substr($synonym, 1, 1) <= 9
+                ) {
+                    $position = substr($synonym, 1, 1);
+                    if ((! array_key_exists('opt', $optInfo))
+                        or ($optInfo['opt'] !== '=' and $optInfo['opt'] !== ':')
+                    ) {
+                        die(
+                            "Ordered unflagged option $position in '$synonyms'"
+                            . " must take an argument."
+                        );
+                    }
+                    if (array_key_exists($position, $ordered_unflagged_args)) {
+                        print(
+                            "Warning: ordered unflagged option $synonym"
+                            . " declared again - ignoring declaration in "
+                            . "'$synonyms'\n"
+                        );
+                    } else {
+                        $ordered_unflagged_args[$position] = $optInfo;
+                    }
+                    continue; // foreach synonym
+                }
                 // check for existing synonyms
                 if (array_key_exists($synonym, $arg_lookup)) {
                     print("Warning: synonym $synonym declared twice - ignoring.\n");
