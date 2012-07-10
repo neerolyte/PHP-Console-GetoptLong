@@ -22,9 +22,9 @@ Warning about duplicate synonyms - B in A last;setup;foo foobar|foo;Warning: syn
 Warning about duplicate synonyms - short;setup;foo|f file|f;Warning: synonym f declared twice - ignoring.\nOK
 Warning about duplicate synonyms - one negated, the other not;setup;notice tice!;Warning: synonym notice declared twice - ignoring.\nOK
 Options with dashes in them are OK;setup;foo-bar-baz;OK
-Ordered unflagged option must be a mandatory argument (flag);setup;foo|_1;Ordered unflagged option 1 in 'foo|_1' must be a mandatory argument option.
-Ordered unflagged option must be a mandatory argument (increment);setup;foo|_1+;Ordered unflagged option 1 in 'foo|_1' must be a mandatory argument option.
-Ordered unflagged option must be a mandatory argument (optional);setup;foo|_1:s;Ordered unflagged option 1 in 'foo|_1' must be a mandatory argument option.
+Ordered unflagged option must take an argument (flag);setup;foo|_1;Ordered unflagged option 1 in 'foo|_1' must take an argument.
+Ordered unflagged option must take an argument (increment);setup;foo|_1+;Ordered unflagged option 1 in 'foo|_1' must take an argument.
+Ordered unflagged option must take an argument (negatable);setup;foo|_1!;Ordered unflagged option 1 in 'foo|_1' must take an argument.
 
 # No arguments
 No arguments;noargs;;()
