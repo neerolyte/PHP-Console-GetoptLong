@@ -172,6 +172,8 @@ class Console_GetoptLong
      * If you supply your own description that includes 'help' or 'h' as
      * synonyms, you're on your own and automated help will not come forth. 
      * 
+     * TODO: handle --option=argument style options.
+     *
      * @return array the remaining list of command line parameters that
      * weren't options or their arguments.  These can occur anywhere in the
      * command line, so (with the above argument description) it would be
@@ -350,12 +352,20 @@ class Console_GetoptLong
 
                 Console_GetoptLong::_debug(" Looks like option $option.\n");
 
+                $argInEquals = false;
+                if (strpos($option, '=') > 0) { // must be at least one character
+                    // we can't insert the value in the array, because
+                    // several things will break - e.g. argument supplied to
+                    // non-argument option
+                    list($option, $argInEquals) = explode('=', $option);
+                }
                 if (array_key_exists($option, $arg_lookup) === true) {
                     Console_GetoptLong::_debug(
                         "  And it's an option we recognise\n"
                     );
 
                     $optInfo = $arg_lookup[$option];
+                    // TODO: only handle help here if we've been asked to.
                     if ($optInfo === 'help') {
                         // magic keyword
                         Console_GetoptLong::_showHelp($argHelp);
