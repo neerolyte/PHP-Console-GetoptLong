@@ -166,7 +166,8 @@ class Console_GetoptLong
     private function _setVariable(&$optInfo, $option, $argument)
     {
         Console_GetoptLong::_debug(
-            " at _setVariable(",var_dump($optInfo), ", $option, $argument)\n"
+            " at _setVariable(" . implode(',',array_keys($optInfo)) 
+            . ", $option, $argument)\n"
         );
         $var = &$optInfo['var'];
         if (array_key_exists('type', $optInfo)
