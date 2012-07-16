@@ -37,6 +37,20 @@ class Console_GetoptLong
     private static $_debug = false;
 
     /**
+     * _debug - print string if in debugging mode
+     * 
+     * @param string $string the string to print
+     *
+     * @return none
+     */
+    private function _debug($string)
+    {
+        if (Console_GetoptLong::$_debug) {
+            echo $string;
+        }
+    }
+    
+    /**
      * Lookup of type letters to words
      *
      * @var    array
@@ -84,20 +98,6 @@ class Console_GetoptLong
             Console_GetoptLong::$_unkOptHand = $method;
         }
     }    
-    
-    /**
-     * _debug - print string if in debugging mode
-     * 
-     * @param string $string the string to print
-     *
-     * @return none
-     */
-    private function _debug($string)
-    {
-        if (Console_GetoptLong::$_debug) {
-            echo $string;
-        }
-    }
     
     /**
      * Check argument against type spec and return true if it is that type.
@@ -163,12 +163,15 @@ class Console_GetoptLong
      *
      * @return none
      */
-    private function _setVariable($optInfo, $option, $argument)
+    private function _setVariable(&$optInfo, $option, $argument)
     {
+        Console_GetoptLong::_debug(
+            " at _setVariable(",var_dump($optInfo), ", $option, $argument)\n"
+        );
         $var = &$optInfo['var'];
-        if (! Console_GetoptLong::_checkType(
-            $argument, $optInfo['type']
-        )) {
+        if (array_key_exists('type', $optInfo)
+            and ! Console_GetoptLong::_checkType($argument, $optInfo['type'])
+        ) {
             die(
                 "$option argument requires "
                 . Console_GetoptLong::$_typeLookup[
@@ -214,6 +217,8 @@ class Console_GetoptLong
 
             $var = $argument;
         }
+        Console_GetoptLong::_debug("  we've set it now.\n");
+        $optInfo['set'] = true;
     }
     
     /**
@@ -288,7 +293,7 @@ class Console_GetoptLong
      * can be passed as the second parameter to getOptions.
      *
      * To pick up options from the processed argument list in order, use the
-     * description '_1' (or '_2', or in general '_(\d+)').  After all flagged
+     * synonym '_1' (or '_2', or in general '_(\d+)').  After all flagged
      * options are processed, if any such synonyms are found, they will be
      * taken from the related place in the array, numbered from 1.  Places
      * not numbered are ignored - so if you have _1, _2 and _4, the third
@@ -339,12 +344,14 @@ class Console_GetoptLong
                 $this_has_help = true;
                 // Make sure we reference the reference
                 $optInfo = array(
-                    'var'    => &$argDescriptions[$argdesc]['var'],
+                    'var'   => &$argDescriptions[$argdesc]['var'],
                 );
             } else {
                 // Take whatever reference we've got and store it.
                 // Make sure we reference the reference
-                $optInfo = array('var' => &$argDescriptions[$argdesc]);
+                $optInfo = array(
+                    'var'   => &$argDescriptions[$argdesc],
+                );
             }
 
             // Get the synonyms and the optional options
@@ -357,6 +364,7 @@ class Console_GetoptLong
             }
 
             $synonyms = $matches[1];
+            $optInfo['synonyms'] = $synonyms;
             $optstr = '';
             if (count($matches) > 2) {
                 $optstr = $matches[2];
@@ -377,7 +385,8 @@ class Console_GetoptLong
                     }
 
                     Console_GetoptLong::_debug(
-                        "Opt info opt = $optInfo[opt], type = $optInfo[type]\n"
+                        "Options $synonyms will get opt:$optInfo[opt],"
+                        . " type:$optInfo[type]\n"
                     );
                 }
             }
@@ -399,6 +408,9 @@ class Console_GetoptLong
                     and substr($synonym, 1, 1) <= 9
                 ) {
                     $position = substr($synonym, 1, 1);
+                    Console_GetoptLong::_debug(
+                        " Putting ordered unflagged option for position $position\n"
+                    );
                     if ((! array_key_exists('opt', $optInfo))
                         or ($optInfo['opt'] !== '=' and $optInfo['opt'] !== ':')
                     ) {
@@ -424,7 +436,7 @@ class Console_GetoptLong
                 } else {
                     $arg_lookup[$synonym] = $optInfo;
                     Console_GetoptLong::_debug(
-                        "Putting synonym $synonym of $synonyms in arg_lookup\n"
+                        " Putting synonym $synonym of $synonyms in arg_lookup\n"
                     );
                 }
                 if ($optstr === '!') {
@@ -440,7 +452,7 @@ class Console_GetoptLong
                     } else {
                         $arg_lookup["no$synonym"] = $optInfo;
                         Console_GetoptLong::_debug(
-                            "Got negatable option, added no$synonyms[0] option\n"
+                            " Got negatable option, added no$synonyms[0] option\n"
                         );
                     }
                 }
@@ -607,7 +619,7 @@ class Console_GetoptLong
                             $var ++;
                             Console_GetoptLong::_debug(
                                 "  it's an incrementing argument, setting its"
-                                . " variable to $optInfo[var]\n"
+                                . " variable to $var\n"
                             );
                         } else if ($opt === '!') {
                             // a negatable argument - check if we've been
@@ -660,6 +672,59 @@ class Console_GetoptLong
             $i++;
         }//end while
 
+        if (count($ordered_unflagged_args) > 0) {
+            Console_GetoptLong::_debug(
+                "Before ordered unflagged processing, unprocessed arguments are ("
+                . implode(', ', $unprocessedArgs)
+                . ")\n"
+            );
+
+            // Process ordered unflagged options from remaining command line
+            Console_GetoptLong::_debug(
+                'Processing ' . count($ordered_unflagged_args)
+                . " ordered unflagged arguments.\n"
+            );
+            // Read arguments in order, starting from the back.  This may sound
+            // strange, but means we can splice the elements out of the array
+            // without disturbing the order, thus processing the array in one go.
+            krsort($ordered_unflagged_args);
+            // TODO: if this option has already been set via a flag, do not
+            // set it here.  This should be handled by the 'set' flag in the
+            // optInfo array, but that doesn't seem to be working.
+            foreach ($ordered_unflagged_args as $pos => $optInfo) {
+                Console_GetoptLong::_debug(
+                    " Checking that we have an argument in position $pos"
+                    . " and that it hasn't already been set.\n"
+                );
+                Console_GetoptLong::_debug(
+                    "  before check, optInfo array keys: "
+                    . implode(", ", array_keys($optInfo)) 
+                    . " - $optInfo[synonyms]\n"
+                );
+                // We've numbered from 1, but array keys are from zero
+                if (array_key_exists($pos-1, $unprocessedArgs)
+                    and ! array_key_exists('set',$optInfo)
+                ) {
+                    // Set the variable - cheat on the name of the option
+                    Console_GetoptLong::_setVariable(
+                        $optInfo,
+                        "command line parameter $pos",
+                        $unprocessedArgs[$pos-1]
+                    );
+                    // Remove it from the unprocessed arguments list
+                    Console_GetoptLong::_debug(
+                        " Removing argument $pos from remaining command line.\n"
+                    );
+                    array_splice($unprocessedArgs, $pos-1, 1);
+                }
+            }
+        }
+
+        Console_GetoptLong::_debug(
+            "Handing ("
+            . implode(', ', $unprocessedArgs)
+            . ") back as remaining arguments\n"
+        );
         return $unprocessedArgs;
 
     }//end getOptions()
