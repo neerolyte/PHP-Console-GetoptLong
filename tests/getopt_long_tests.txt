@@ -258,7 +258,6 @@ Ignore unrecognised option, both types, mixed;unknown_option_handling;ignore --b
 
 # Ordered unflagged options - in other words, allowing the caller to pick
 # values up from the non-flagged options in the command line in order.
-
 Ordered unflagged options, no options;ordered_unflagged;;,,()
 Ordered unflagged options, one (short);ordered_unflagged;-f foo;foo,,()
 Ordered unflagged options, one (long);ordered_unflagged;-first foo;foo,,()
@@ -268,4 +267,7 @@ Ordered unflagged options, one (unflagged);ordered_unflagged;foo;foo,,()
 Ordered unflagged options, two (unflagged);ordered_unflagged;foo bar;foo,bar,()
 Ordered unflagged options, three (unflagged);ordered_unflagged;foo bar baz;foo,bar,(baz)
 Ordered unflagged options, four (unflagged);ordered_unflagged;foo bar baz burfl;foo,bar,(baz,burfl)
+# Ordered unflagged options should not drain the command line if they've already been assigned
+Ordered unflagged options, one flagged, one not;ordered_unflagged;-f foo bar baz;foo,baz,(bar)
+Ordered unflagged options, one not, one flagged;ordered_unflagged;-s foo bar baz;bar,foo,(baz)
 
