@@ -145,6 +145,21 @@ class Console_GetoptLong
     }
     
     /**
+     * _optionIsSet - remember which argument descriptions have been set
+     *
+     * We want to catch the case where a person sets an option via a flag
+     * on the command line, and not set it again when reading through the
+     * unflagged arguments.  Annoyingly, it's much easier to have a
+     * separate global variable to remember this than to try and remember
+     * it in the option info, because of PHP's lack of local loop variables.
+     * It's a long story - ask Paul about it sometime.
+     *
+     * @var    array
+     * @access private
+     */
+    private static $_optionIsSet = array();
+    
+    /**
      * _setVariable - set the variable from the option's argument.
      *
      * Takes the pre-processed knowledge of this option, the option as
@@ -163,11 +178,11 @@ class Console_GetoptLong
      *
      * @return none
      */
-    private function _setVariable(&$optInfo, $option, $argument)
+    private function _setVariable($optInfo, $option, $argument)
     {
         Console_GetoptLong::_debug(
-            " at _setVariable(" . implode(',',array_keys($optInfo)) 
-            . ", $option, $argument)\n"
+            " at _setVariable([" . implode(',',array_keys($optInfo)) 
+            . "], $option, $argument)\n"
         );
         $var = &$optInfo['var'];
         if (array_key_exists('type', $optInfo)
@@ -219,7 +234,7 @@ class Console_GetoptLong
             $var = $argument;
         }
         Console_GetoptLong::_debug("  we've set it now.\n");
-        $optInfo['set'] = true;
+        Console_GetoptLong::$_optionIsSet[$optInfo['descript']] = true;
     }
     
     /**
@@ -337,6 +352,9 @@ class Console_GetoptLong
             // description and enable the help system (if the user hasn't
             // set one up).
             $this_has_help = false;
+            
+            // Remember the argument description - it's unique
+            $optInfo = array('descript' => $argdesc);
             if (is_array($argDescriptions[$argdesc])
                 && array_key_exists('var', $argDescriptions[$argdesc])
                 && array_key_exists('help', $argDescriptions[$argdesc])
@@ -344,15 +362,11 @@ class Console_GetoptLong
                 $help_supplied = true;
                 $this_has_help = true;
                 // Make sure we reference the reference
-                $optInfo = array(
-                    'var'   => &$argDescriptions[$argdesc]['var'],
-                );
+                $optInfo['var'] = &$argDescriptions[$argdesc]['var'];
             } else {
                 // Take whatever reference we've got and store it.
                 // Make sure we reference the reference
-                $optInfo = array(
-                    'var'   => &$argDescriptions[$argdesc],
-                );
+                $optInfo['var'] = &$argDescriptions[$argdesc];
             }
 
             // Get the synonyms and the optional options
@@ -365,7 +379,6 @@ class Console_GetoptLong
             }
 
             $synonyms = $matches[1];
-            $optInfo['synonyms'] = $synonyms;
             $optstr = '';
             if (count($matches) > 2) {
                 $optstr = $matches[2];
@@ -429,7 +442,7 @@ class Console_GetoptLong
                     } else {
                         $ordered_unflagged_args[$position] = $optInfo;
                     }
-                    continue; // foreach synonym
+                    continue; // foreach synonym - no need to check other things
                 }
                 // check for existing synonyms
                 if (array_key_exists($synonym, $arg_lookup)) {
@@ -617,19 +630,24 @@ class Console_GetoptLong
                             }//end if
                         } else if ($opt === '+') {
                             // incrementing argument
-                            $var ++;
                             Console_GetoptLong::_debug(
                                 "  it's an incrementing argument, setting its"
                                 . " variable to $var\n"
                             );
+                            $var ++;
+                            Console_GetoptLong::$_optionIsSet[
+                                $optInfo['descript']
+                            ] = true;
                         } else if ($opt === '!') {
                             // a negatable argument - check if we've been
                             // given the no variant and set accordingly.
-                            $var = (substr($option, 0, 2) === 'no') ? 0 : 1;
-                            
                             Console_GetoptLong::_debug(
                                 "  it's negatable: set to $var because of $option\n"
                             );
+                            $var = (substr($option, 0, 2) === 'no') ? 0 : 1;
+                            Console_GetoptLong::$_optionIsSet[
+                                $optInfo['descript']
+                            ] = true;
                         }
                     } else {
                         // No args, just a boolean, set it:
@@ -637,6 +655,9 @@ class Console_GetoptLong
                             "  it's a boolean: setting its variable to 1\n"
                         );
                         $var = 1;
+                        Console_GetoptLong::$_optionIsSet[
+                            $optInfo['descript']
+                        ] = true;
                     }
                 } else if (substr($arg, 1, 1) != '-'
                     and array_key_exists(substr($arg, 1, 1), $arg_lookup)
@@ -673,7 +694,9 @@ class Console_GetoptLong
             $i++;
         }//end while
 
-        if (count($ordered_unflagged_args) > 0) {
+        if (count($ordered_unflagged_args) > 0
+             and count($unprocessedArgs) > 0
+        ) {
             Console_GetoptLong::_debug(
                 "Before ordered unflagged processing, unprocessed arguments are ("
                 . implode(', ', $unprocessedArgs)
@@ -697,14 +720,10 @@ class Console_GetoptLong
                     " Checking that we have an argument in position $pos"
                     . " and that it hasn't already been set.\n"
                 );
-                Console_GetoptLong::_debug(
-                    "  before check, optInfo array keys: "
-                    . implode(", ", array_keys($optInfo)) 
-                    . " - $optInfo[synonyms]\n"
-                );
                 // We've numbered from 1, but array keys are from zero
                 if (array_key_exists($pos-1, $unprocessedArgs)
-                    and ! array_key_exists('set',$optInfo)
+                    and ! array_key_exists($optInfo['descript'],
+                        Console_GetoptLong::$_optionIsSet)
                 ) {
                     // Set the variable - cheat on the name of the option
                     Console_GetoptLong::_setVariable(
