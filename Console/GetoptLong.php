@@ -181,7 +181,7 @@ class Console_GetoptLong
     private function _setVariable($optInfo, $option, $argument)
     {
         Console_GetoptLong::_debug(
-            " at _setVariable([" . implode(',',array_keys($optInfo)) 
+            " at _setVariable([" . implode(',', array_keys($optInfo)) 
             . "], $option, $argument)\n"
         );
         $var = &$optInfo['var'];
@@ -724,9 +724,10 @@ class Console_GetoptLong
                     Console_GetoptLong::_debug(
                         " Yes - has it already been set?\n"
                     );
-                    if (array_key_exists($optInfo['descript'],
-                        Console_GetoptLong::$_optionIsSet)
-                    ) {
+                    if (array_key_exists(
+                        $optInfo['descript'],
+                        Console_GetoptLong::$_optionIsSet
+                    )) {
                         Console_GetoptLong::_debug(
                             " Yes - move on, our work is done here\n"
                         );
@@ -751,8 +752,10 @@ class Console_GetoptLong
                     // processing only allows mandatory and optional arguments
                     // to have unflagged ordered synonyms
                     if ($optInfo['opt'] == '='
-                        and ! array_key_exists($optInfo['descript'],
-                        Console_GetoptLong::$_optionIsSet)
+                        and ! array_key_exists(
+                            $optInfo['descript'],
+                            Console_GetoptLong::$_optionIsSet
+                        )
                     ) {
                         die(
                             "Mandatory argument required in position"
