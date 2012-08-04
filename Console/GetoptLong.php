@@ -634,12 +634,12 @@ class Console_GetoptLong
                                 }
                             }//end if
                         } else if ($opt === '+') {
-                            // incrementing argument
+                            // incrementing argument (then display it in debug)
+                            $var ++;
                             Console_GetoptLong::_debug(
                                 "  it's an incrementing argument, setting its"
                                 . " variable to $var\n"
                             );
-                            $var ++;
                             Console_GetoptLong::$_optionIsSet[
                                 $optInfo['descript']
                             ] = true;
