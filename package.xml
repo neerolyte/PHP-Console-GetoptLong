@@ -14,8 +14,8 @@
   <email>paulway@mabula.net</email>
   <active>yes</active>
  </lead>
- <date>2012-05-11</date>
- <time>21:37:00</time>
+ <date>2012-08-04</date>
+ <time>10:47:00</time>
  <version>
   <release>1.9.5</release>
   <api>1.1</api>
@@ -76,7 +76,7 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2012-07-11</date>
+   <date>2012-08-04</date>
    <license uri="http://www.php.net/license/3_01.txt">PHP 3.01</license>
    <notes>Ordered unflagged options can now be specified with _1 .. _9 - these
  pick arguments off the command line after flagged options are processed.</notes>
