@@ -317,6 +317,8 @@ class Console_GetoptLong
      *
      * TODO: handle -abcd (where a, b, c and d are single letter options).
      *
+     * TODO: set debug if $_ENV[Console_GetoptLong_Debug] is set
+     *
      * @return array the remaining list of command line parameters that
      * weren't options or their arguments.  These can occur anywhere in the
      * command line, so (with the above argument description) it would be
@@ -355,17 +357,20 @@ class Console_GetoptLong
             
             // Remember the argument description - it's unique
             $optInfo = array('descript' => $argdesc);
+            
+            // Make sure we reference the variable given so we set it later
+            // Have we been given help text for this option?
             if (is_array($argDescriptions[$argdesc])
                 && array_key_exists('var', $argDescriptions[$argdesc])
                 && array_key_exists('help', $argDescriptions[$argdesc])
             ) {
+                // Yes - process the help info later, and store the var
                 $help_supplied = true;
                 $this_has_help = true;
                 // Make sure we reference the reference
                 $optInfo['var'] = &$argDescriptions[$argdesc]['var'];
             } else {
-                // Take whatever reference we've got and store it.
-                // Make sure we reference the reference
+                // No - take whatever reference we've got and store it.
                 $optInfo['var'] = &$argDescriptions[$argdesc];
             }
 
@@ -694,9 +699,7 @@ class Console_GetoptLong
             $i++;
         }//end while
 
-        if (count($ordered_unflagged_args) > 0
-             and count($unprocessedArgs) > 0
-        ) {
+        if (count($ordered_unflagged_args) > 0) {
             Console_GetoptLong::_debug(
                 "Before ordered unflagged processing, unprocessed arguments are ("
                 . implode(', ', $unprocessedArgs)
@@ -712,30 +715,53 @@ class Console_GetoptLong
             // strange, but means we can splice the elements out of the array
             // without disturbing the order, thus processing the array in one go.
             krsort($ordered_unflagged_args);
-            // TODO: if this option has already been set via a flag, do not
-            // set it here.  This should be handled by the 'set' flag in the
-            // optInfo array, but that doesn't seem to be working.
             foreach ($ordered_unflagged_args as $pos => $optInfo) {
                 Console_GetoptLong::_debug(
-                    " Checking that we have an argument in position $pos"
-                    . " and that it hasn't already been set.\n"
+                    " Checking that we have an argument in position $pos.\n"
                 );
                 // We've numbered from 1, but array keys are from zero
-                if (array_key_exists($pos-1, $unprocessedArgs)
-                    and ! array_key_exists($optInfo['descript'],
-                        Console_GetoptLong::$_optionIsSet)
-                ) {
-                    // Set the variable - cheat on the name of the option
-                    Console_GetoptLong::_setVariable(
-                        $optInfo,
-                        "command line parameter $pos",
-                        $unprocessedArgs[$pos-1]
-                    );
-                    // Remove it from the unprocessed arguments list
+                if (array_key_exists($pos-1, $unprocessedArgs)) {
                     Console_GetoptLong::_debug(
-                        " Removing argument $pos from remaining command line.\n"
+                        " Yes - has it already been set?\n"
                     );
-                    array_splice($unprocessedArgs, $pos-1, 1);
+                    if (array_key_exists($optInfo['descript'],
+                        Console_GetoptLong::$_optionIsSet)
+                    ) {
+                        Console_GetoptLong::_debug(
+                            " Yes - move on, our work is done here\n"
+                        );
+                    } else {
+                        // Set the variable - cheat on the name of the option
+                        Console_GetoptLong::_setVariable(
+                            $optInfo,
+                            "command line parameter $pos",
+                            $unprocessedArgs[$pos-1]
+                        );
+                        // Remove it from the unprocessed arguments list
+                        Console_GetoptLong::_debug(
+                            " Removing argument $pos from remaining arguments.\n"
+                        );
+                        array_splice($unprocessedArgs, $pos-1, 1);
+                    }
+                } else {
+                    Console_GetoptLong::_debug(
+                        " No - is it a mandatory argument and not already set?\n"
+                    );
+                    // We can assert that it has a type, since the initial
+                    // processing only allows mandatory and optional arguments
+                    // to have unflagged ordered synonyms
+                    if ($optInfo['opt'] == '='
+                        and ! array_key_exists($optInfo['descript'],
+                        Console_GetoptLong::$_optionIsSet)
+                    ) {
+                        die(
+                            "Mandatory argument required in position"
+                            . " $pos on command line.\n"
+                        );
+                    }
+                    // else optional argument is blank - which is a valid
+                    // value.  Should it be set to 1, though, as optional
+                    // arguments are if they don't get given a value?
                 }
             }
         }
